@@ -1,44 +1,22 @@
 package main
 
 import (
-	"fmt"
-	"github.com/nats-io/stan.go"
+	"go_STAN/cmd/configs"
+	"go_STAN/internal/streaming"
 )
 
 func main() {
+	clusterID, clientID, natsURL := configs.GetConfigData()
 
-	sc, err := stan.Connect("test-cluster", "client-artyom", stan.NatsURL("nats://localhost:4222"))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	stanPublisher := streaming.Connect(clusterID, clientID.PublisherID, natsURL)
+	defer streaming.Disconnect(stanPublisher)
 
-	// Simple Synchronous Publisher
-	err = sc.Publish("foo", []byte("Hello World"))
-	if err != nil {
-		fmt.Println(err)
-		return
-	} // does not return until an ack has been received from NATS Streaming
+	stanSubscriber := streaming.Connect(clusterID, clientID.SubscriberID, natsURL)
+	defer streaming.Disconnect(stanSubscriber)
 
-	// Simple Async Subscriber
-	sub, _ := sc.Subscribe("foo", func(m *stan.Msg) {
-		fmt.Printf("Received a message: %s\n", string(m.Data))
-	},
-		stan.DeliverAllAvailable())
+	streaming.Publish(stanPublisher, "orders", `{"test": "bruh"}`)
+	streaming.Publish(stanPublisher, "orders", `{"test": "ez25"}`)
 
-	// Unsubscribe
-	err = sub.Unsubscribe()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// Close connection
-	defer func(sc stan.Conn) {
-		err = sc.Close()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-	}(sc)
+	subscriber := streaming.Subscribe(stanSubscriber, "orders")
+	streaming.Unsubscribe(subscriber)
 }
