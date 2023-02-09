@@ -18,5 +18,6 @@ func main() {
 	streaming.Publish(stanPublisher, "orders", `{"test": "ez25"}`)
 
 	subscriber := streaming.Subscribe(stanSubscriber, "orders")
+	// WaitGroup
 	streaming.Unsubscribe(subscriber)
 }
