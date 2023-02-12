@@ -1,9 +1,18 @@
 {
-  "cluster_id": "test-cluster",
-  "client_id": {
-    "publisher_id": "data-sender",
-    "subscriber_id": "data-receiver"
+  "stan": {
+    "cluster_id": "test-cluster",
+    "client_id": {
+      "publisher_id": "data-sender",
+      "subscriber_id": "data-receiver"
+    },
+    "nats_url": "nats://localhost:4222",
+    "subject": "orders"
   },
-  "nats_url": "nats://localhost:4222",
-  "subject": "orders"
+  "db": {
+    "user": "postgres",
+    "password": "Desantyra81",
+    "db_name": "OrdersDB",
+    "ssl_mode": "disable",
+    "driver_name": "postgres"
+  }
 }

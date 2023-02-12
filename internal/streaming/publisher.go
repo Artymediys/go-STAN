@@ -2,9 +2,15 @@ package streaming
 
 import (
 	"github.com/nats-io/stan.go"
-	"go_STAN/pkg"
+	"log"
 )
 
-func Publish(sc stan.Conn, subject string, jsonData string) {
-	pkg.PrintIfError(sc.Publish(subject, []byte(jsonData)))
+func Publish(sc *stan.Conn, clientID *string, subject *string, jsonData *[]byte) {
+	err := (*sc).Publish(*subject, *jsonData)
+	if err != nil {
+		log.Fatalf("%s: %v", *clientID, err)
+		return
+	}
+
+	log.Printf("%s: the data published!", *clientID)
 }
