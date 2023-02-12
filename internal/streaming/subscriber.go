@@ -1,21 +1,37 @@
 package streaming
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/nats-io/stan.go"
-	"go_STAN/pkg"
+	"go_STAN/internal/db"
+	"log"
 )
 
-func Subscribe(sc stan.Conn, subject string) stan.Subscription {
-	subscriber, err := sc.Subscribe(subject, func(msg *stan.Msg) {
-		fmt.Printf("Received a message: %s\n", string(msg.Data))
-	}, stan.DeliverAllAvailable())
+func Subscribe(sc *stan.Conn, clientID *string, subject *string) *stan.Subscription {
+	sub, err := (*sc).Subscribe(*subject, func(msg *stan.Msg) {
+		var receivedOrder db.Order
+		log.Printf("Received a message: %s\n", string(msg.Data))
 
-	pkg.PrintIfError(err)
+		unmarshalErr := json.Unmarshal(msg.Data, &receivedOrder)
+		if unmarshalErr != nil {
+			log.Fatalln("Incorrect data received -> skip")
+		} else {
+			//cache.Push(receivedOrder)
+		}
+	}, stan.DurableName("DurSub"))
+	if err != nil {
+		log.Fatalf("%s: %v", *clientID, err)
+	}
 
-	return subscriber
+	return &sub
 }
 
-func Unsubscribe(subscriber stan.Subscription) {
-	pkg.PrintIfError(subscriber.Unsubscribe())
+func Unsubscribe(subscriber *stan.Subscription, clientID *string) {
+	err := (*subscriber).Unsubscribe()
+	if err != nil {
+		log.Fatalf("%s: %v", *clientID, err)
+		return
+	}
+
+	log.Printf("%s: unsubscribed!", *clientID)
 }

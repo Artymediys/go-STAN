@@ -7,6 +7,11 @@ import (
 )
 
 type Connection struct {
+	STAN Stan     `json:"stan"`
+	DB   DataBase `json:"db"`
+}
+
+type Stan struct {
 	ClusterID string `json:"cluster_id"`
 	ClientID  Client `json:"client_id"`
 	NatsURL   string `json:"nats_url"`
@@ -16,6 +21,14 @@ type Connection struct {
 type Client struct {
 	PublisherID  string `json:"publisher_id"`
 	SubscriberID string `json:"subscriber_id"`
+}
+
+type DataBase struct {
+	User       string `json:"user"`
+	Password   string `json:"password"`
+	DBName     string `json:"db_name"`
+	SSLMode    string `json:"ssl_mode"`
+	DriverName string `json:"driver_name"`
 }
 
 func GetConfigData() (Connection, error) {

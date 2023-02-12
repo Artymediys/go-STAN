@@ -1,9 +1,15 @@
 package streaming
 
 import (
+	"github.com/nats-io/stan.go"
 	"go_STAN/cmd/configs"
+	"go_STAN/internal/testing"
 	"log"
 )
+
+var stanPublisher *stan.Conn
+var stanSubscriber *stan.Conn
+var subscriber *stan.Subscription
 
 func Run() {
 	configData, err := configs.GetConfigData()
@@ -13,31 +19,38 @@ func Run() {
 	}
 
 	var (
-		clusterID = configData.ClusterID
-		clientID  = configData.ClientID
-		natsURL   = configData.NatsURL
-		subject   = configData.Subject
+		clusterID = configData.STAN.ClusterID
+		clientID  = configData.STAN.ClientID
+		natsURL   = configData.STAN.NatsURL
+		subject   = configData.STAN.Subject
 	)
 
-	stanPublisher := Connect(clusterID, clientID.PublisherID, natsURL)
+	stanPublisher = Connect(&clusterID, &clientID.PublisherID, &natsURL)
 	if stanPublisher == nil {
 		return
 	}
-	//defer Disconnect(stanPublisher)
 
-	stanSubscriber := Connect(clusterID, clientID.SubscriberID, natsURL)
+	stanSubscriber = Connect(&clusterID, &clientID.SubscriberID, &natsURL)
 	if stanSubscriber == nil {
 		return
 	}
-	//defer Disconnect(stanSubscriber)
+	subscriber = Subscribe(stanSubscriber, &clientID.SubscriberID, &subject)
 
-	Publish(stanPublisher, subject, `{"test": "bruh"}`)
-	Publish(stanPublisher, subject, `{"test": "ez25"}`)
-
-	//subscriber := Subscribe(stanSubscriber, subject)
-
+	order1, order2 := testing.GetTestOrders()
+	Publish(stanPublisher, &clientID.PublisherID, &subject, &order1)
+	Publish(stanPublisher, &clientID.PublisherID, &subject, &order2)
 }
 
 func Finish() {
-	//Unsubscribe(subscriber)
+	configData, err := configs.GetConfigData()
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+
+	Unsubscribe(subscriber, &configData.STAN.ClientID.SubscriberID)
+	Disconnect(stanSubscriber, &configData.STAN.ClientID.SubscriberID)
+	Disconnect(stanPublisher, &configData.STAN.ClientID.PublisherID)
+
+	log.Println("STAN: finished!")
 }

@@ -1,0 +1,69 @@
+// THE COPY OF "streaming/app.go" WITH A RECONNECT TEST
+
+package streaming
+
+import (
+	"github.com/nats-io/stan.go"
+    "go_STAN/cmd/configs"
+    "go_STAN/internal/testing"
+    "log"
+)
+
+var stanPublisher stan.Conn
+var stanSubscriber stan.Conn
+var subscriber stan.Subscription
+
+func Run() {
+	configData, err := configs.GetConfigData()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	var (
+		clusterID = configData.ClusterID
+		clientID  = configData.ClientID
+		natsURL   = configData.NatsURL
+		subject   = configData.Subject
+	)
+
+	stanPublisher = streaming.Connect(&clusterID, &clientID.PublisherID, &natsURL)
+	if stanPublisher == nil {
+		return
+	}
+
+	stanSubscriber = streaming.Connect(&clusterID, &clientID.SubscriberID, &natsURL)
+	if stanSubscriber == nil {
+		return
+	}
+	subscriber = streaming.Subscribe(&stanSubscriber, &clientID.SubscriberID, &subject)
+
+	// Test
+	order1, order2 := testing.GetTestOrders()
+
+	streaming.Publish(&stanPublisher, &clientID.PublisherID, &subject, &order1)
+	time.Sleep(3 * time.Second)
+	streaming.Disconnect(&stanSubscriber, &configData.ClientID.SubscriberID)
+
+	streaming.Publish(&stanPublisher, &clientID.PublisherID, &subject, &order2)
+	time.Sleep(3 * time.Second)
+	stanSubscriber = streaming.Connect(&clusterID, &clientID.SubscriberID, &natsURL)
+	if stanSubscriber == nil {
+		return
+	}
+	subscriber = streaming.Subscribe(&stanSubscriber, &clientID.SubscriberID, &subject)
+}
+
+func Finish() {
+	configData, err := configs.GetConfigData()
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+
+	streaming.Unsubscribe(&subscriber, &configData.ClientID.SubscriberID)
+	streaming.Disconnect(&stanSubscriber, &configData.ClientID.SubscriberID)
+	streaming.Disconnect(&stanPublisher, &configData.ClientID.PublisherID)
+
+	log.Println("STAN: finished!")
+}
