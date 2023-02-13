@@ -7,11 +7,13 @@ import (
 	"log"
 )
 
-var stanPublisher *stan.Conn
-var stanSubscriber *stan.Conn
-var subscriber *stan.Subscription
+type StanUsers struct {
+	stanPublisher  *stan.Conn
+	stanSubscriber *stan.Conn
+	subscriber     *stan.Subscription
+}
 
-func Run() {
+func Run(stanUsers *StanUsers) {
 	configData, err := configs.GetConfigData()
 	if err != nil {
 		log.Fatal(err)
@@ -25,32 +27,32 @@ func Run() {
 		subject   = configData.STAN.Subject
 	)
 
-	stanPublisher = Connect(&clusterID, &clientID.PublisherID, &natsURL)
-	if stanPublisher == nil {
+	stanUsers.stanPublisher = Connect(&clusterID, &clientID.PublisherID, &natsURL)
+	if stanUsers.stanPublisher == nil {
 		return
 	}
 
-	stanSubscriber = Connect(&clusterID, &clientID.SubscriberID, &natsURL)
-	if stanSubscriber == nil {
+	stanUsers.stanSubscriber = Connect(&clusterID, &clientID.SubscriberID, &natsURL)
+	if stanUsers.stanSubscriber == nil {
 		return
 	}
-	subscriber = Subscribe(stanSubscriber, &clientID.SubscriberID, &subject)
+	stanUsers.subscriber = Subscribe(stanUsers.stanSubscriber, &clientID.SubscriberID, &subject)
 
 	order1, order2 := testing.GetTestOrders()
-	Publish(stanPublisher, &clientID.PublisherID, &subject, &order1)
-	Publish(stanPublisher, &clientID.PublisherID, &subject, &order2)
+	Publish(stanUsers.stanPublisher, &clientID.PublisherID, &subject, &order1)
+	Publish(stanUsers.stanPublisher, &clientID.PublisherID, &subject, &order2)
 }
 
-func Finish() {
+func Finish(stanUsers *StanUsers) {
 	configData, err := configs.GetConfigData()
 	if err != nil {
 		log.Fatalln(err)
 		return
 	}
 
-	Unsubscribe(subscriber, &configData.STAN.ClientID.SubscriberID)
-	Disconnect(stanSubscriber, &configData.STAN.ClientID.SubscriberID)
-	Disconnect(stanPublisher, &configData.STAN.ClientID.PublisherID)
+	Unsubscribe(stanUsers.subscriber, &configData.STAN.ClientID.SubscriberID)
+	Disconnect(stanUsers.stanSubscriber, &configData.STAN.ClientID.SubscriberID)
+	Disconnect(stanUsers.stanPublisher, &configData.STAN.ClientID.PublisherID)
 
 	log.Println("STAN: finished!")
 }

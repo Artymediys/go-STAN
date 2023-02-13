@@ -6,7 +6,7 @@ type Order struct {
 	Entry             string   `json:"entry"`
 	Delivery          Delivery `json:"delivery"`
 	Payment           Payment  `json:"payment"`
-	Items             []Items  `json:"items"`
+	Items             []Item   `json:"items"`
 	Locale            string   `json:"locale"`
 	InternalSignature string   `json:"internal_signature"`
 	CustomerID        string   `json:"customer_id"`
@@ -40,7 +40,7 @@ type Payment struct {
 	CustomFee    int    `json:"custom_fee"`
 }
 
-type Items struct {
+type Item struct {
 	ChrtID      int    `json:"chrt_id"`
 	TrackNumber string `json:"track_number"`
 	Price       int    `json:"price"`
@@ -52,4 +52,12 @@ type Items struct {
 	NmID        int    `json:"nm_id"`
 	Brand       string `json:"brand"`
 	Status      int    `json:"status"`
+}
+
+type MainInfo struct {
+	ID          int    `json:"id"`
+	OrderUID    string `json:"order_uid"`
+	CustomerID  string `json:"customer_id"`
+	Transaction string `json:"transaction"`
+	Locale      string `json:"locale"`
 }

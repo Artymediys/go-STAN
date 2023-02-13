@@ -31,7 +31,7 @@ func GetTestOrders() ([]byte, []byte) {
 			GoodsTotal:   317,
 			CustomFee:    0,
 		},
-		Items: []db.Items{
+		Items: []db.Item{
 			{
 				ChrtID:      9934930,
 				TrackNumber: "WBILMTESTTRACK",
@@ -81,7 +81,7 @@ func GetTestOrders() ([]byte, []byte) {
 			GoodsTotal:   322,
 			CustomFee:    2,
 		},
-		Items: []db.Items{
+		Items: []db.Item{
 			{
 				ChrtID:      8434235,
 				TrackNumber: "WBILMTESTONETRACK",

@@ -6,19 +6,19 @@ import (
 
 type Cache struct {
 	mutex       sync.RWMutex
-	orders      map[uint64]Order
+	orders      map[uint64]MainInfo
 	TotalOrders uint64
 }
 
 func InitCache() *Cache {
-	order := make(map[uint64]Order)
+	order := make(map[uint64]MainInfo)
 
 	return &Cache{
 		orders: order,
 	}
 }
 
-func (cache *Cache) Push(order Order) {
+func (cache *Cache) Push(order MainInfo) {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
@@ -26,13 +26,13 @@ func (cache *Cache) Push(order Order) {
 	cache.orders[cache.TotalOrders] = order
 }
 
-func (cache *Cache) Get(id uint64) (Order, bool) {
+func (cache *Cache) Get(id uint64) (MainInfo, bool) {
 	cache.mutex.RLock()
 	defer cache.mutex.RUnlock()
 
 	order, found := cache.orders[id]
 	if !found {
-		return Order{}, false
+		return MainInfo{}, false
 	}
 
 	return order, true

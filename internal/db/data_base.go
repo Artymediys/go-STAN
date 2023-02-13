@@ -50,6 +50,38 @@ func (db *DataBase) Close() {
 	}
 }
 
-func fillCache(cache *Cache) {
+func fillCache(db *sql.DB, cache *Cache) {
+	rows, err := db.Query(
+		"SELECT orders.id," +
+			" orders.order_uid," +
+			" orders.customer_id," +
+			" payments.transaction," +
+			" orders.locale" +
+			" FROM orders LEFT OUTER JOIN payments" +
+			" ON orders.payment_id = payments.id")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
+	defer func(rows *sql.Rows) {
+		closeErr := rows.Close()
+		if closeErr != nil {
+			log.Fatal(err)
+		}
+	}(rows)
+
+	var orders []MainInfo
+	for rows.Next() {
+		order := MainInfo{}
+		scanErr := rows.Scan(&order.ID, &order.OrderUID, &order.CustomerID, &order.Transaction, &order.Locale)
+		if scanErr != nil {
+			fmt.Println(scanErr)
+			continue
+		}
+		orders = append(orders, order)
+	}
+	for _, order := range orders {
+		cache.Push(order)
+	}
 }

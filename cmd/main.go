@@ -10,15 +10,15 @@ import (
 
 func main() {
 	//var cache *db.Cache = db.InitCache()
+	var stanUsers streaming.StanUsers
+	streaming.Run(&stanUsers)
 
-	//streaming.Run(db)
-
-	// CTRL+C
+	// CTRL+C - stop the app
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
 
 	log.Println("Stopping the app...")
-	streaming.Finish()
+	streaming.Finish(&stanUsers)
 	log.Print("The app has stopped")
 }

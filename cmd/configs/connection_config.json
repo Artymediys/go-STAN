@@ -10,7 +10,7 @@
   },
   "db": {
     "user": "postgres",
-    "password": "Desantyra81",
+    "password": "Bruh3228",
     "db_name": "OrdersDB",
     "ssl_mode": "disable",
     "driver_name": "postgres"
