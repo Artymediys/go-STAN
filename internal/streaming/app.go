@@ -3,6 +3,7 @@ package streaming
 import (
 	"github.com/nats-io/stan.go"
 	"go_STAN/cmd/configs"
+	"go_STAN/internal/db"
 	"go_STAN/internal/testing"
 	"log"
 )
@@ -13,10 +14,10 @@ type StanUsers struct {
 	subscriber     *stan.Subscription
 }
 
-func Run(stanUsers *StanUsers) {
+func Run(stanUsers *StanUsers, dataBase *db.DataBase) {
 	configData, err := configs.GetConfigData()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return
 	}
 
@@ -36,7 +37,7 @@ func Run(stanUsers *StanUsers) {
 	if stanUsers.stanSubscriber == nil {
 		return
 	}
-	stanUsers.subscriber = Subscribe(stanUsers.stanSubscriber, &clientID.SubscriberID, &subject)
+	stanUsers.subscriber = Subscribe(dataBase, stanUsers.stanSubscriber, &clientID.SubscriberID, &subject)
 
 	order1, order2 := testing.GetTestOrders()
 	Publish(stanUsers.stanPublisher, &clientID.PublisherID, &subject, &order1)
@@ -46,7 +47,7 @@ func Run(stanUsers *StanUsers) {
 func Finish(stanUsers *StanUsers) {
 	configData, err := configs.GetConfigData()
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		return
 	}
 

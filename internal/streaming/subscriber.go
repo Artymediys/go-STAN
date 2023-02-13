@@ -7,20 +7,20 @@ import (
 	"log"
 )
 
-func Subscribe(sc *stan.Conn, clientID *string, subject *string) *stan.Subscription {
+func Subscribe(dataBase *db.DataBase, sc *stan.Conn, clientID *string, subject *string) *stan.Subscription {
 	sub, err := (*sc).Subscribe(*subject, func(msg *stan.Msg) {
-		var receivedOrder db.Order
 		log.Printf("Received a message: %s\n", string(msg.Data))
 
+		var receivedOrder db.Order
 		unmarshalErr := json.Unmarshal(msg.Data, &receivedOrder)
 		if unmarshalErr != nil {
-			log.Fatalln("Incorrect data received -> skip")
+			log.Println("Incorrect data received -> skip")
 		} else {
-			//cache.Push(receivedOrder)
+			dataBase.AddOrder(receivedOrder)
 		}
 	}, stan.DurableName("DurSub"))
 	if err != nil {
-		log.Fatalf("%s: %v", *clientID, err)
+		log.Printf("%s: %v", *clientID, err)
 	}
 
 	return &sub
@@ -29,7 +29,7 @@ func Subscribe(sc *stan.Conn, clientID *string, subject *string) *stan.Subscript
 func Unsubscribe(subscriber *stan.Subscription, clientID *string) {
 	err := (*subscriber).Unsubscribe()
 	if err != nil {
-		log.Fatalf("%s: %v", *clientID, err)
+		log.Printf("%s: %v", *clientID, err)
 		return
 	}
 

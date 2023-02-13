@@ -6,27 +6,35 @@ import (
 
 type Cache struct {
 	mutex       sync.RWMutex
-	orders      map[uint64]MainInfo
-	TotalOrders uint64
+	orders      map[int]MainInfo
+	TotalOrders int
 }
 
 func InitCache() *Cache {
-	order := make(map[uint64]MainInfo)
+	order := make(map[int]MainInfo)
 
 	return &Cache{
 		orders: order,
 	}
 }
 
-func (cache *Cache) Push(order MainInfo) {
+func (cache *Cache) Push(order interface{}) {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
 	cache.TotalOrders++
-	cache.orders[cache.TotalOrders] = order
+
+	switch order.(type) {
+	case Order:
+		orderMainInfo := parseOrder(cache.TotalOrders, order.(Order))
+		cache.orders[cache.TotalOrders] = *orderMainInfo
+	case MainInfo:
+		cache.orders[cache.TotalOrders] = order.(MainInfo)
+	}
+
 }
 
-func (cache *Cache) Get(id uint64) (MainInfo, bool) {
+func (cache *Cache) Get(id int) (MainInfo, bool) {
 	cache.mutex.RLock()
 	defer cache.mutex.RUnlock()
 
@@ -36,4 +44,16 @@ func (cache *Cache) Get(id uint64) (MainInfo, bool) {
 	}
 
 	return order, true
+}
+
+func parseOrder(id int, order Order) *MainInfo {
+	mainInfo := &MainInfo{
+		ID:          id,
+		OrderUID:    order.OrderUID,
+		CustomerID:  order.CustomerID,
+		Transaction: order.Payment.Transaction,
+		Locale:      order.Locale,
+	}
+
+	return mainInfo
 }

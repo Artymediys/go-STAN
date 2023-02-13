@@ -1,0 +1,140 @@
+// THE COPY OF "streaming/app.go" WITH A RECONNECT TEST
+
+package streaming
+
+import (
+	"github.com/nats-io/stan.go"
+    "go_STAN/cmd/configs"
+    "go_STAN/internal/testing"
+    "log"
+)
+
+var stanPublisher stan.Conn
+var stanSubscriber stan.Conn
+var subscriber stan.Subscription
+
+func Run() {
+	configData, err := configs.GetConfigData()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	var (
+		clusterID = configData.ClusterID
+		clientID  = configData.ClientID
+		natsURL   = configData.NatsURL
+		subject   = configData.Subject
+	)
+
+	stanPublisher = streaming.Connect(&clusterID, &clientID.PublisherID, &natsURL)
+	if stanPublisher == nil {
+		return
+	}
+
+	stanSubscriber = streaming.Connect(&clusterID, &clientID.SubscriberID, &natsURL)
+	if stanSubscriber == nil {
+		return
+	}
+	subscriber = streaming.Subscribe(&stanSubscriber, &clientID.SubscriberID, &subject)
+
+	// Test
+	order1, order2 := testing.GetTestOrders()
+
+	streaming.Publish(&stanPublisher, &clientID.PublisherID, &subject, &order1)
+	time.Sleep(3 * time.Second)
+	streaming.Disconnect(&stanSubscriber, &configData.ClientID.SubscriberID)
+
+	streaming.Publish(&stanPublisher, &clientID.PublisherID, &subject, &order2)
+	time.Sleep(3 * time.Second)
+	stanSubscriber = streaming.Connect(&clusterID, &clientID.SubscriberID, &natsURL)
+	if stanSubscriber == nil {
+		return
+	}
+	subscriber = streaming.Subscribe(&stanSubscriber, &clientID.SubscriberID, &subject)
+}
+
+func Finish() {
+	configData, err := configs.GetConfigData()
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+
+	streaming.Unsubscribe(&subscriber, &configData.ClientID.SubscriberID)
+	streaming.Disconnect(&stanSubscriber, &configData.ClientID.SubscriberID)
+	streaming.Disconnect(&stanPublisher, &configData.ClientID.PublisherID)
+
+	log.Println("STAN: finished!")
+}
+
+package streaming
+
+import (
+	"github.com/nats-io/stan.go"
+	"go_STAN/cmd/configs"
+	"go_STAN/internal/db"
+	"go_STAN/internal/testing"
+	"log"
+)
+
+type StanUsers struct {
+	stanPublisher  *stan.Conn
+	stanSubscriber *stan.Conn
+	subscriber     *stan.Subscription
+}
+
+func Run(stanUsers *StanUsers, dataBase *db.DataBase) {
+	configData, err := configs.GetConfigData()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	var (
+		clusterID = configData.STAN.ClusterID
+		clientID  = configData.STAN.ClientID
+		natsURL   = configData.STAN.NatsURL
+		subject   = configData.STAN.Subject
+	)
+
+	stanUsers.stanPublisher = Connect(&clusterID, &clientID.PublisherID, &natsURL)
+	if stanUsers.stanPublisher == nil {
+		return
+	}
+
+	stanUsers.stanSubscriber = Connect(&clusterID, &clientID.SubscriberID, &natsURL)
+	if stanUsers.stanSubscriber == nil {
+		return
+	}
+	stanUsers.subscriber = Subscribe(dataBase, stanUsers.stanSubscriber, &clientID.SubscriberID, &subject)
+
+	// Test
+    order1, order2 := testing.GetTestOrders()
+
+    Publish(stanUsers.stanPublisher, &clientID.PublisherID, &subject, &order1)
+    time.Sleep(3 * time.Second)
+    Disconnect(stanUsers.stanSubscriber, &clientID.SubscriberID)
+
+    Publish(stanUsers.stanPublisher, &clientID.PublisherID, &subject, &order2)
+    time.Sleep(3 * time.Second)
+    stanUsers.stanSubscriber = Connect(&clusterID, &clientID.SubscriberID, &natsURL)
+    if stanUsers.stanSubscriber == nil {
+        return
+    }
+    stanUsers.subscriber = Subscribe(dataBase, stanUsers.stanSubscriber, &clientID.SubscriberID, &subject)
+}
+
+func Finish(stanUsers *StanUsers) {
+	configData, err := configs.GetConfigData()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	Unsubscribe(stanUsers.subscriber, &configData.STAN.ClientID.SubscriberID)
+	Disconnect(stanUsers.stanSubscriber, &configData.STAN.ClientID.SubscriberID)
+	Disconnect(stanUsers.stanPublisher, &configData.STAN.ClientID.PublisherID)
+
+	log.Println("STAN: finished!")
+}

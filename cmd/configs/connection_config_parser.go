@@ -34,7 +34,7 @@ type DataBase struct {
 func GetConfigData() (Connection, error) {
 	jsonData, err := os.ReadFile("cmd/configs/connection_config.json")
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return Connection{}, err
 	}
 

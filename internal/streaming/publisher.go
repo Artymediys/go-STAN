@@ -8,7 +8,7 @@ import (
 func Publish(sc *stan.Conn, clientID *string, subject *string, jsonData *[]byte) {
 	err := (*sc).Publish(*subject, *jsonData)
 	if err != nil {
-		log.Fatalf("%s: %v", *clientID, err)
+		log.Printf("%s: %v", *clientID, err)
 		return
 	}
 
