@@ -12,7 +12,7 @@ import (
 
 type DataBase struct {
 	mutex sync.RWMutex
-	cache *Cache
+	Cache *Cache
 	DB    *sql.DB
 }
 
@@ -41,7 +41,7 @@ func InitDB() *DataBase {
 	fillCache(db, cache)
 
 	return &DataBase{
-		cache: cache,
+		Cache: cache,
 		DB:    db,
 	}
 }
@@ -132,14 +132,13 @@ func (db *DataBase) AddOrder(newOrder Order) {
 
 	db.mutex.Unlock()
 
-	db.cache.Push(newOrder)
+	db.Cache.Push(newOrder)
 	log.Printf("DataBase: Order successful added to DB and to cache\n")
 }
 
 func fillCache(db *sql.DB, cache *Cache) {
 	rows, err := db.Query(
-		"SELECT orders.id," +
-			" orders.order_uid," +
+		"SELECT orders.order_uid," +
 			" orders.customer_id," +
 			" payments.transaction," +
 			" orders.locale" +
@@ -160,7 +159,7 @@ func fillCache(db *sql.DB, cache *Cache) {
 	for rows.Next() {
 		order := MainInfo{}
 
-		scanErr := rows.Scan(&order.ID, &order.OrderUID, &order.CustomerID, &order.Transaction, &order.Locale)
+		scanErr := rows.Scan(&order.OrderUID, &order.CustomerID, &order.Transaction, &order.Locale)
 		if scanErr != nil {
 			fmt.Println(scanErr)
 			continue

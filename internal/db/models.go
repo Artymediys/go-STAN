@@ -55,7 +55,6 @@ type Item struct {
 }
 
 type MainInfo struct {
-	ID          int    `json:"id"`
 	OrderUID    string `json:"order_uid"`
 	CustomerID  string `json:"customer_id"`
 	Transaction string `json:"transaction"`

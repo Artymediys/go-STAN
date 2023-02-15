@@ -26,7 +26,7 @@ func (cache *Cache) Push(order interface{}) {
 
 	switch order.(type) {
 	case Order:
-		orderMainInfo := parseOrder(cache.TotalOrders, order.(Order))
+		orderMainInfo := parseOrder(order.(Order))
 		cache.orders[cache.TotalOrders] = *orderMainInfo
 	case MainInfo:
 		cache.orders[cache.TotalOrders] = order.(MainInfo)
@@ -46,9 +46,8 @@ func (cache *Cache) Get(id int) (MainInfo, bool) {
 	return order, true
 }
 
-func parseOrder(id int, order Order) *MainInfo {
+func parseOrder(order Order) *MainInfo {
 	mainInfo := &MainInfo{
-		ID:          id,
 		OrderUID:    order.OrderUID,
 		CustomerID:  order.CustomerID,
 		Transaction: order.Payment.Transaction,
